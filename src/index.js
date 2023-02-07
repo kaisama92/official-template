@@ -1,55 +1,55 @@
-import isError from './error.js';
+
 import './css/styles.css';
 
-function handleSelect(event) {
-  event.preventDefault();
-  const input1 = parseInt(document.getElementById("select-beverage").value);
-  const input2 = parseInt(document.getElementById("select-car").value);
-  const input3 = parseInt(document.getElementById("select-animal").value);
-  const input4 = parseInt(document.getElementById("select-shoe").value);
-  const input5 = parseInt(document.getElementById("select-event").value);
-  
-  const userName = document.getElementById("person1").value;
+function getGif(search) {
+  let request = new XMLHttpRequest();
+  const url = `http://api.giphy.com/v1/gifs/search?api_key=${process.env.API_KEY}&q=${search}&limit=5&offset=0&rating=pg&lang=en`;
 
-  let output;
-  let totalValue = ((((input1 + input2) + input3) + input4) + input5);
-  if (isError(input1, input2, input3, input4, input5)) {
-    output = "Error";
-    document.querySelector("p#error").removeAttribute("class", "hidden");
-    document.querySelector("p#Java").setAttribute("class", "hidden");
-    document.querySelector("p#python").setAttribute("class", "hidden");
-    document.querySelector("p#C").setAttribute("class", "hidden");
-  } else {
+  request.addEventListener("loadend", function() {
+    try {
+      const response = JSON.parse(this.responseText);
+      if (this.status === 200) {
+        printElements(response, search);
+      } else {
+        throw Error("Status Error");
+      }
+    } catch(error) {
+      /* eslint-disable no-console */
+      console.error(`RED ALERT: There is an error: ${error.message}`);
+      /* eslint-enable no-console */
+      printError(this, search);
+    }
+  });
 
-    if (totalValue === 5) {
-      output = "JavaScript";
-      document.querySelector("p#Java").removeAttribute("class");
-      document.querySelector("p#python").setAttribute("class", "hidden");
-      document.querySelector("p#C").setAttribute("class", "hidden");
-      document.querySelector("p#error").setAttribute("class", "hidden");
-    } else if (totalValue > 5 && totalValue <= 10) {
-      output = "Python";
-      document.querySelector("p#Java").setAttribute("class", "hidden");
-      document.querySelector("p#python").removeAttribute("class");
-      document.querySelector("p#C").setAttribute("class","hidden");
-      document.querySelector("p#error").setAttribute("class", "hidden");
-
-    } else if (totalValue > 10 && totalValue <= 15) {
-      output = "C++";
-
-      document.querySelector("p#Java").setAttribute("class", "hidden");
-      document.querySelector("p#python").setAttribute("class", "hidden");
-      document.querySelector("p#C").removeAttribute("class");
-      document.querySelector("p#error").setAttribute("class", "hidden");
-    } 
-  }
-
-  document.getElementById("output").innerText = output;
-  document.querySelector("span#name1").innerText =  userName;
-  document.querySelector("span#name2").innerText = userName;
-  document.querySelector("span#name3").innerText = userName;
+  request.open("GET", url, true);
+  request.send();
 }
 
-window.addEventListener("load", function() {
-  this.document.getElementById("select-form").addEventListener("submit", handleSelect);
+
+
+
+// UI Logic
+
+function printError(request, search) {
+  document.querySelector('#results').innerText = `There was an error accessing gifs matching "${search}": ${request.status} ${request.statusText}`;
+}
+
+function printElements(apiResponse, search) {
+  document.querySelector('#results').innerText = `Here are the gifs matching your search: ${search}:`;
+  apiResponse.data.forEach(function(element){
+    let newUrl = element.images.fixed_height.url;
+    let img = document.createElement('img');
+    img.setAttribute('src', newUrl);
+    document.querySelector('#results-img').append(img);
+  });
+}
+
+function handleFormSubmission(event) {
+  event.preventDefault();
+  const search = document.querySelector('#search').value;
+  getGif(search);
+}
+
+window.addEventListener("load", function () {
+  this.document.querySelector('form').addEventListener("submit", handleFormSubmission);
 });
